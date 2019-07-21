@@ -166,6 +166,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="inc\ConsolodiateMarket.h" />
+    <ClInclude Include="inc\ExchangeMessage.h" />
     <ClInclude Include="inc\Feeder.h" />
     <ClInclude Include="inc\Order.h" />
   </ItemGroup>

@@ -10,13 +10,9 @@
 #include <functional>
 #include "order.h"
 #include <iostream>
-
-const std::string kBuyLiteral = "B";
-const std::string kSellLiteral = "S";
-const std::string kAddNewOrderIdentifier = "A";
-const std::string kModifyOrderIdentifier = "A";
-const std::string kCancelOrderIdentifier = "R";
-
+#include "inc\ConsException.h"
+#include "inc\Feeder.h"
+#include "inc\ExchangeMessage.h"
 
 namespace orderbook {
 
@@ -27,15 +23,20 @@ namespace orderbook {
 
 	public:
 		BookConsolidator() : orders_locator_(), bids_(), asks_() {}
+		void processExFeed(const std::string &input);
+		void consolodiateFeed(exchangeFeed &fed);
 		void processOrder(const std::string &input);
 		void setTargetSize(orderbook::Order::Quantity targetSize);
+		void printTop5();
 
 	private:
 		void updateBooks(Order &order);
 		void addToBooks(Order &order);
 		void reduceFromBooks(Order &order);
-		Order::Limit_Price executeOrder(Order &order);
-		void printOutput(Order &order, Order::Limit_Price &totalPrice);
+		
+
+		//Order::Limit_Price executeOrder(Order &order);
+		//void printOutput(Order &order, Order::Limit_Price &totalPrice);
 
 		struct orderLocator {
 			orderbook::OrderSide side;

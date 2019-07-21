@@ -27,6 +27,9 @@
     <ClInclude Include="inc\Feeder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="inc\ExchangeMessage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ConsolodiateMarket.cpp">

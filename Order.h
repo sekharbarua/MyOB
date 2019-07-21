@@ -15,10 +15,7 @@ namespace orderbook {
 
 	enum OrderSide {BUY, SELL };
 	enum OrderType { NEW_ORDER, CANCEL_ORDER, MODIFY_ORDER };
-
-
-
-	
+		
 	// Market Order
 	class  Order
 	{
@@ -26,7 +23,7 @@ namespace orderbook {
 		typedef std::string Symbol;                 // Name of the exchange
 		typedef std::string Order_Id;               // Unique Order Id
 		typedef unsigned int Timestamp;             // Milliseconds from midnight
-		typedef unsigned long int Limit_Price;      // Price in cents
+		typedef double Limit_Price;      // Price in cents
 		typedef unsigned long int Quantity;         // Size of the Order
      public:
         Timestamp timestamp = 0;

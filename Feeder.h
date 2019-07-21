@@ -10,9 +10,19 @@
 #include <string>
 #include <sstream>
 #include <array>
-#include "order.h"
-#include "ConsException.h"
-#include "ConsolodiateMarket.h"
+#include <regex>
+#include "inc\order.h"
+#include "inc\ConsException.h"
+#include "inc\ConsolodiateMarket.h"
+#include "inc\ExchangeMessage.h"
+
+const std::string kBuyLiteral = "B";
+const std::string kSellLiteral = "S";
+const std::string kAddNewOrderIdentifier = "A";
+const std::string kModifyOrderIdentifier = "A";
+const std::string kCancelOrderIdentifier = "R";
+
+
 
 namespace orderbook {
 
@@ -20,11 +30,33 @@ namespace orderbook {
 	public:
 		// Basic Market Order Feeder
 		static orderbook::Order parse(const std::string &input);
+		static orderbook::exchangeFeed parseExFeed(const std::string &input);
+	
 	};
 
 } // orderbook namespace
 
 #endif //FEEDER_PARSER_H
+
+inline orderbook::exchangeFeed orderbook::Feeder::parseExFeed(const std::string &input) {
+	exchangeFeed feed;
+
+	std::istringstream input_string_stream(input);
+	std::array<std::string, 5> tokens;
+	std::copy(std::istream_iterator<std::string>(input_string_stream),
+		std::istream_iterator<std::string>(),
+		tokens.begin());
+
+	feed.mProduct = tokens[0];
+	feed.bidSize = std::stoul(tokens[1]);
+	feed.bidPrice = std::stold(tokens[2]);
+	feed.offerPrice = std::stold(tokens[3]);
+	feed.offerSize = std::stoul(tokens[4]);
+	
+	
+
+	return feed;
+}
 
 inline orderbook::Order orderbook::Feeder::parse(const std::string &input) {
 	// Split the line into different tokens
@@ -68,7 +100,7 @@ inline orderbook::Order orderbook::Feeder::parse(const std::string &input) {
 			throw ParseException();
 
 		// price (in cents)
-		order.price = static_cast<Order::Limit_Price>(100 * std::stof(tokens[4]));
+		order.price = static_cast<Order::Limit_Price>(std::stof(tokens[4]));
 
 		// size
 		order.size = std::stoul(tokens[5]);
@@ -84,7 +116,7 @@ inline orderbook::Order orderbook::Feeder::parse(const std::string &input) {
 		throw ParseException();
 	}
 
-	auto eProduct = tokens[6];
+	auto eProduct = tokens[2];
 	order.mProduct = eProduct;
 
 	return order;

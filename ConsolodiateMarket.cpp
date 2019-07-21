@@ -5,8 +5,49 @@
 #include <map>
 #include <array>
 #include "inc\ConsolodiateMarket.h"
-#include "inc\ConsException.h"
-#include "inc\Feeder.h"
+
+
+void orderbook::BookConsolidator::consolodiateFeed(exchangeFeed &fed) 
+{
+	orderLocator book_order;
+	double newBidSize = fed.bidSize;
+	double newOfferSize = fed.offerSize;
+
+	for (auto itr = bids_.find(fed.bidPrice); itr != bids_.end(); itr++)
+	{
+		newBidSize = bids_.find(fed.bidPrice)->second + fed.bidSize;
+		
+	}
+	bids_.erase(fed.bidPrice);
+	bids_.insert(std::pair<Order::Limit_Price, Order::Quantity>(fed.bidPrice, newBidSize));
+	for (auto itr = asks_.find(fed.offerPrice); itr != asks_.end(); itr++)
+	{
+		newOfferSize = asks_.find(fed.offerPrice)->second + fed.offerSize;
+		
+	}
+	asks_.erase(fed.offerPrice);
+	asks_.insert(std::pair<Order::Limit_Price, Order::Quantity>(fed.offerPrice, newOfferSize));
+}
+
+void orderbook::BookConsolidator::processExFeed(const std::string &input)
+{
+	exchangeFeed feed;
+	// Parsing
+	try {
+		feed = Feeder::parseExFeed(input);
+	}
+	catch (const ParseException&) {
+		std::cerr << "***WARNING*** Input format incorrect." << std::endl;
+		std::cerr << "Malformed input message: " << input << std::endl;
+		return;
+	}
+	try {
+		consolodiateFeed(feed);
+	}
+	catch (const ParseException&) {
+		std::cerr << "Error on Feed Consolodations";
+	}
+}
 
 void orderbook::BookConsolidator::processOrder(const std::string &input) {
 	Order order;
@@ -29,12 +70,6 @@ void orderbook::BookConsolidator::processOrder(const std::string &input) {
 	catch (const updateBooksException&) {
 		std::cerr << "Error on adding order to the orderbooks";
 	}
-
-	// Calculating income or expense
-	auto totalPrice = executeOrder(order);
-
-	// Printing the output
-	printOutput(order, totalPrice);
 }
 
 void orderbook::BookConsolidator::updateBooks(Order &order) {
@@ -51,10 +86,25 @@ void orderbook::BookConsolidator::addToBooks(Order &order) {
 	book_order.side = order.side;
 	auto locator_it = orders_locator_.insert_or_assign(order.id, book_order).first;
 	std::multimap<Order::Limit_Price, Order::Quantity>::iterator order_it;
+	
 	if (order.side == orderbook::BUY)
-		order_it = bids_.insert(std::pair<Order::Limit_Price, Order::Quantity>(order.price, order.size));
+	{
+		double newBidSize = order.size;
+		for (auto itr = bids_.find(order.price); itr != bids_.end(); itr++)
+			newBidSize = bids_.find(order.price)->second + order.size;
+		bids_.erase(order.price);
+		bids_.insert(std::pair<Order::Limit_Price, Order::Quantity>(order.price, newBidSize));
+		order_it = bids_.begin();
+	}
 	else
-		order_it = asks_.insert(std::pair<Order::Limit_Price, Order::Quantity>(order.price, order.size));
+	{
+		double newOfferSize = order.size;
+		for (auto itr = asks_.find(order.price); itr != asks_.end(); itr++)
+			newOfferSize = asks_.find(order.price)->second + order.size;
+		asks_.erase(order.price);
+		asks_.insert(std::pair<Order::Limit_Price, Order::Quantity>(order.price, newOfferSize));
+		order_it = asks_.begin();
+	}
 	locator_it->second.order_it = order_it;
 }
 
@@ -80,67 +130,36 @@ void orderbook::BookConsolidator::reduceFromBooks(Order &order) {
 	}
 }
 
-orderbook::Order::Limit_Price orderbook::BookConsolidator::executeOrder(Order &order) {
-	Order::Quantity total_size = 0;
-	Order::Limit_Price possible_income_expense = 0;
-	Order::Limit_Price total = 0;
-	switch (order.side) {
-	case orderbook::BUY:
-		for (auto buy_item : bids_) {
-			Order::Limit_Price price = buy_item.first;
-			Order::Quantity size = buy_item.second;
-			if (target_size <= total_size + size) {
-				possible_income_expense += price * (target_size - total_size);
-				total = possible_income_expense;
-				break;
-			}
-			else {
-				total_size += size;
-				possible_income_expense += price * size;
-			}
-		}
-		break;
-	case orderbook::SELL:
-		for (auto buy_item : asks_) {
-			Order::Limit_Price price = buy_item.first;
-			Order::Quantity size = buy_item.second;
-			if (target_size <= total_size + size) {
-				possible_income_expense += price * (target_size - total_size);
-				total = possible_income_expense;
-				break;
-			}
-			else {
-				total_size += size;
-				possible_income_expense += price * size;
-			}
-		}
-		break;
-	default:
-		throw executeOrderException();
-	}
-	return total;
-}
-
-void orderbook::BookConsolidator::printOutput(Order &order, Order::Limit_Price &totalPrice) {
-	double total_in_dollar = static_cast<double>(totalPrice) / 100;
-	if (order.side == orderbook::BUY && buy_previous_trade_total != totalPrice) {
-		buy_previous_trade_total = totalPrice;
-		std::cout << order.timestamp << " " << kSellLiteral << " ";
-		if (totalPrice != 0)
-			std::cout << std::fixed << std::setprecision(2) << total_in_dollar << std::endl;
-		else
-			std::cout << "NA" << std::endl;
-	}
-	else if (order.side == orderbook::SELL && sell_previous_trade_total != totalPrice) {
-		sell_previous_trade_total = totalPrice;
-		std::cout << order.timestamp << " " << kBuyLiteral << " ";
-		if (totalPrice != 0)
-			std::cout << std::fixed << std::setprecision(2) << total_in_dollar << std::endl;
-		else
-			std::cout << "NA" << std::endl;
-	}
-}
-
 void orderbook::BookConsolidator::setTargetSize(Order::Quantity targetSize) {
 	target_size = targetSize;
 }
+
+void orderbook::BookConsolidator::printTop5()
+{
+
+	if (bids_.empty() || asks_.empty())
+	{
+		std::cout << "Nothing to Show.Empty Order Book" << std::endl;
+		std::cout << "Please choose Option 2 -To Process the order" << std::endl;
+	}
+	else
+	{
+		std::cout << "Bid Size" << " " << "Bid Price " <<  " "<< "Offer Price" << " " << "Offer Size" << endl;
+		for (auto it_m1 = bids_.cbegin(), end_m1 = bids_.cend(),
+			it_m2 = asks_.cbegin(), end_m2 = asks_.cend();
+			it_m1 != end_m1 || it_m2 != end_m2;)
+		{
+			if ((it_m1 != end_m1) && (it_m2 != end_m2))
+			{
+				std::cout << "  " << it_m1->second << "\t\t" << it_m1->first << "\t" << it_m2->first << "\t" << it_m2->second << endl;
+				++it_m1;
+				++it_m2;
+			}
+			else
+				break;
+		}
+	}
+	std::cout << endl;
+}
+
+
