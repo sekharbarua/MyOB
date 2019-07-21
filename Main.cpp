@@ -107,18 +107,24 @@ int main(int argc, char* argv[]) {
 				if (load_from_file) {
 					while (getline(file_stream, line))
 					{
-						if (countWord(line) > 5)
-							mBookCon.processOrder(line);
-						else
-							mBookCon.processExFeed(line);
+						if (!line.empty())
+						{
+							if (countWord(line) == 5)
+								mBookCon.processExFeed(line);
+							else
+								mBookCon.processOrder(line);
+						}
 					}
 				}
 				else {
 					while (getline(std::cin, line)) {
-						if (countWord(line) > 5)
-							mBookCon.processOrder(line);
-						else
-							mBookCon.processExFeed(line);;
+						if (!line.empty())
+						{
+							if (countWord(line) == 5)
+								mBookCon.processExFeed(line);
+							else
+								mBookCon.processOrder(line);
+						}
 					}
 				}
 				break;

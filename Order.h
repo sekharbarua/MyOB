@@ -1,6 +1,6 @@
 /*
  * Auther :-Sekhar Barua
- * Date : - 15-07-2019
+ * Date : - 22-07-2019
  *
  */
 
@@ -23,7 +23,7 @@ namespace orderbook {
 		typedef std::string Symbol;                 // Name of the exchange
 		typedef std::string Order_Id;               // Unique Order Id
 		typedef unsigned int Timestamp;             // Milliseconds from midnight
-		typedef double Limit_Price;      // Price in cents
+		typedef double Limit_Price;                 // Price in cents
 		typedef unsigned long int Quantity;         // Size of the Order
      public:
         Timestamp timestamp = 0;
@@ -33,8 +33,7 @@ namespace orderbook {
 		Limit_Price price = 0;
 		Quantity size = 0;
 		Symbol mProduct = std::string("");
-			
-     
+	 
 	public:
 	
 		Order() = default;

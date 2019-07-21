@@ -1,6 +1,6 @@
 /*
  * Auther :-Sekhar Barua
- * Date : - 15-07-2019
+ * Date : - 22-07-2019
  *
  */
 
@@ -116,7 +116,7 @@ inline orderbook::Order orderbook::Feeder::parse(const std::string &input) {
 		throw ParseException();
 	}
 
-	auto eProduct = tokens[2];
+	auto eProduct = tokens[6];
 	order.mProduct = eProduct;
 
 	return order;
